@@ -5,12 +5,13 @@ import keys
 client = OpenAI(
     api_key = keys.key
 )
+
 st.title("AI Schedule Aide")
 col1, col2 = st.columns(2)
 with col1:
-    unavailable = st.text_input("Busy Hours(e.g., School)")
+    unavailable = st.text_input("Busy Hours(e.g., School)", key="unavailable")
 with col2:
-    sleeps = st.text_input("Sleep Hours:")
+    sleeps = st.text_input("Sleep Hours", key="sleeps")
 
 system_prompt = f"""
 You are a scheduling aide. Your job is to help the user organize their tasks over the next week.
@@ -22,7 +23,7 @@ Rules:
 
 You MUST respond with the follwing format, keep everthing on seperate lines so it is easy to read and replace the UNAVAILABLE TIME and SLEEP TIME with what times the user is unavailable and sleeping:
 
-message: A SHORT FRIENDLY SUMMARY OR RESPONSE TO THE USER
+Message: A SHORT FRIENDLY SUMMARY OR RESPONSE TO THE USER
 Monday:
     Tasks: [INSERT THE TASKS FOR MONDAY WITH THE TIME : "HH:MM AM/PM, TASK NAME, AND THEN OPTIONAL NOTES]
     Busy: UNAVAILABLE TIME
@@ -31,18 +32,21 @@ Monday:
 
 Tuesday:
     Tasks: [INSERT THE TASKS FOR TUESDAY WITH THE TIME : "HH:MM AM/PM, TASK NAME, AND THEN OPTIONAL NOTES]
+    **EACH TASK ON A NEW LINE**
     Busy: UNAVAILABLE BLOCK TIME
     Sleep: SLEEP BLOCK
 
 
 Wednesday:
     Tasks: [INSERT THE TASKS FOR WEDNESDAY WITH THE TIME : "HH:MM AM/PM, TASK NAME, AND THEN OPTIONAL NOTES]
+    **EACH TASK ON A NEW LINE**
     Busy: UNAVAILABLE BLOCK TIME
     Sleep: SLEEP BLOCK
 
 
 Thursday:
     Tasks: [INSERT THE TASKS FOR THURSDAY WITH THE TIME : "HH:MM AM/PM, TASK NAME, AND THEN OPTIONAL NOTES]
+    **EACH TASK ON A NEW LINE**    
     Busy: UNAVAILABLE BLOCK TIME
     Sleep: SLEEP BLOCK
 
@@ -70,9 +74,14 @@ suggestions: UP TO 2 OPTIONAL TIPS
 
 """
 if 'convo' not in st.session_state:
-    st.session_state["convo"] = [
-        {"role": "system", "content": system_prompt}
-    ]
+    st.session_state["convo"] = []
+
+#ensures the system message is updated   
+if len(st.session_state["convo"]) == 0 or st.session_state["convo"][0]["role"] != "system":
+    st.session_state["convo"].insert(0, {"role": "system", "content": system_prompt})
+else:
+    st.session_state["convo"][0]["content"] = system_prompt
+
 
 for i, chat_message in enumerate(st.session_state["convo"]):
     if chat_message["role"] == "system":
@@ -89,7 +98,7 @@ with st.form("input", clear_on_submit=True):
         st.session_state["convo"].append({"role": "user", "content": user_input})
 
         api_call = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-5.4",
             messages=st.session_state["convo"],
         )
 
